@@ -15,7 +15,7 @@ module Spree
 
         begin
           unless @payment.save
-            respond_with(@payment) { |format| format.html { redirect_to admin_order_payments_path(@order) } }
+            redirect_to admin_order_payments_path(@order)
             return
           end
 
@@ -35,7 +35,7 @@ module Spree
 
             flash.notice = flash_message_for(@payment, :successfully_created)
 
-            respond_with(@payment) { |format| format.html { redirect_to admin_order_payments_path(@order) } }
+            redirect_to admin_order_payments_path(@order)
           else
             # This is the first payment (admin created order)
             until @order.completed?
@@ -57,12 +57,12 @@ module Spree
               end
             end
             flash.notice = t(:new_order_completed)
-            respond_with(@payment) { |format| format.html { redirect_to admin_order_url(@order) } }
+            redirect_to admin_order_url(@order)
           end
 
         rescue Spree::Core::GatewayError => e
           flash[:error] = "#{e.message}"
-          respond_with(@payment) { |format| format.html { redirect_to new_admin_order_payment_path(@order) } }
+          redirect_to new_admin_order_payment_path(@order)
         end
       end
 
@@ -86,7 +86,7 @@ module Spree
 
           if @order.completed?
             flash.notice = flash_message_for(@payment, :successfully_created)
-            respond_with(@payment) { |format| format.html { redirect_to admin_order_payments_path(@order) } } and return
+            redirect_to admin_order_payments_path(@order) and return
           else
             # We must process changes manually
             @order.state= :complete
@@ -94,12 +94,12 @@ module Spree
             @order.update!
 
             flash.notice = t(:new_order_completed)
-            respond_with(@payment) { |format| format.html { redirect_to admin_order_url(@order) } } and return
+            redirect_to admin_order_url(@order) and return
           end
         end
 
         flash[:error] = t(:payment_processing_failed)
-        respond_with(@payment) { |format| format.html { redirect_to new_admin_order_payment_path(@order) } }
+        redirect_to new_admin_order_payment_path(@order)
       end
 
       def payone_error
@@ -115,7 +115,7 @@ module Spree
         end
 
         flash[:error] = t(:payment_processing_failed)
-        respond_with(@payment) { |format| format.html { redirect_to new_admin_order_payment_path(@order) } }
+        redirect_to new_admin_order_payment_path(@order)
       end
 
       def payone_back
@@ -131,7 +131,7 @@ module Spree
         end
 
         flash[:error] = t(:payment_processing_canceled, scope: 'payone')
-        respond_with(@payment) { |format| format.html { redirect_to new_admin_order_payment_path(@order) } }
+        redirect_to new_admin_order_payment_path(@order)
       end
     end
   end
