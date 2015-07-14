@@ -18,7 +18,7 @@ module Spree
       @available_payment_methods ||=
         PaymentMethod
         .where('type not in (?)', blocked.empty? ? '' : blocked)
-        .available(:front_end)
+        .available_on_front_end
     end
 
     def redirect_required?
