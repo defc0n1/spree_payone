@@ -174,7 +174,7 @@ module Spree::Payone
             message = 'PAYONE payment provider response success'
             options = {
               :test => @test_mode,
-              :authorization => response.txid
+              :authorization => {txid: response.txid, userid: response.userid}.to_json
               # :avs_result N/A
               # :cvv_result N/A
             }
@@ -184,7 +184,7 @@ module Spree::Payone
             message = 'PAYONE payment provider response redirect'
             options = {
               :test => @test_mode,
-              :authorization => response.txid,
+              :authorization => {txid: response.txid, userid: response.userid}.to_json,
               :redirect_url => response.redirecturl
               # :avs_result N/A
               # :cvv_result N/A

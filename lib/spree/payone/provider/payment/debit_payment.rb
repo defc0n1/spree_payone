@@ -86,6 +86,7 @@ module Spree::Payone
         # Sets debit payment parameters.
         def set_debit_payment_request_parameters(request, debit_payment_source)
           request.debit_payment_clearingtype
+          request.userid = debit_payment_source.debtor_id
           request.bankcountry = debit_payment_source.bank_country
           request.iban = debit_payment_source.iban
           request.bic = debit_payment_source.bic

@@ -29,6 +29,9 @@ module Spree::Payone
       # Payment process ID (PAYONE)
       parameter_accessor :txid
 
+      # Debtor-ID for follow-up payments
+      parameter_accessor :userid
+
       # Clearing type
       # elv: Debit payment, cc: Credit card, vor: Prepayment/Cash In Advance, rec: Invoice
       # cod: Cash on delivery, sb: Online Bank Transfer, wlt: e-wallet
@@ -118,7 +121,7 @@ module Spree::Payone
 
       # Online bank transfer type
       # PNT: instant money transfer (DE,AT,CH), GPY: giropay (DE)
-      # EPS: eps – online transfer (AT), PFF: PostFinance E-Finance (CH)
+      # EPS: eps - online transfer (AT), PFF: PostFinance E-Finance (CH)
       # PFC: PostFinance Card (CH), IDL: iDeal (NL)
       parameter_accessor :onlinebanktransfertype
       # Account type/country (DE, AT, CH, NL)
