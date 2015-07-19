@@ -5,59 +5,44 @@ module Spree
         @payment = @order.payments.build(object_params)
         @payment.admin_created= true
 
-        if @payment.payment_method.is_a?(Spree::Gateway::Payone::CreditCard)
-          if @payment.payment_method.payment_profiles_supported? && params[:payone_card].present? and params[:payone_card] != 'new'
-            @payment.source = CreditCard.find_by_id(params[:payone_card])
-          end
-        elsif @payment.payment_method.is_a?(Spree::Gateway) && @payment.payment_method.payment_profiles_supported? && params[:card].present? and params[:card] != 'new'
+        if payone_credit_card? && known_card_in_params?(:payone_card)
+          @payment.source = CreditCard.find_by_id(params[:payone_card])
+        elsif spree_gateway? && known_card_in_params?(:card)
           @payment.source = CreditCard.find_by_id(params[:card])
         end
 
         begin
-          unless @payment.save
-            redirect_to admin_order_payments_path(@order)
-            return
-          end
+          if @payment.save
+            if @order.completed?
+              @payment.process!
 
-          if @order.completed?
-            @payment.process!
-
-            if !@payment.redirect_url.to_s.empty?
-
-              attrs = @payment.attributes
-              @payment.reload
-              attrs.each do |key, value|
-                @payment.update_attribute key, value
+              if @payment.redirect_url.present?
+                probably_redundant_attribute_setter
+                redirect_to @payment.redirect_url and return
               end
 
-              redirect_to @payment.redirect_url.to_s and return
-            end
+              flash.notice = flash_message_for(@payment, :successfully_created)
 
-            flash.notice = flash_message_for(@payment, :successfully_created)
+              redirect_to admin_order_payments_path(@order)
+            else
+              # This is the first payment (admin created order)
+              until @order.completed?
+                @order.next!
 
-            redirect_to admin_order_payments_path(@order)
-          else
-            # This is the first payment (admin created order)
-            until @order.completed?
-              @order.next!
-
-              if @order.redirect_required?
-                @order.payments.each do |payment|
-                  if !payment.redirect_url.to_s.empty?
-
-                    attrs = payment.attributes
-                    payment.reload
-                    attrs.each do |key, value|
-                      payment.update_attribute key, value
+                if @order.redirect_required?
+                  @order.payments.each do |payment|
+                    if payment.redirect_url.present?
+                      probably_redundant_attribute_setter
+                      redirect_to payment.redirect_url and return
                     end
-
-                    redirect_to payment.redirect_url.to_s and return
                   end
                 end
               end
+              flash.notice = t(:new_order_completed)
+              redirect_to edit_admin_order_url(@order)
             end
-            flash.notice = t(:new_order_completed)
-            redirect_to admin_order_url(@order)
+          else
+            redirect_to admin_order_payments_path(@order)
           end
 
         rescue Spree::Core::GatewayError => e
@@ -132,6 +117,32 @@ module Spree
 
         flash[:error] = t(:payment_processing_canceled, scope: 'payone')
         redirect_to new_admin_order_payment_path(@order)
+      end
+
+      private
+
+      def known_card_in_params?(card_type)
+        payment_profiles_supported? && params[card_type].present? and params[card_type] != 'new'
+      end
+
+      def payment_profiles_supported?
+        @payment.payment_method.payment_profiles_supported?
+      end
+
+      def spree_gateway?
+        @payment.payment_method.is_a?(Spree::Gateway)
+      end
+
+      def payone_credit_card?
+        @payment.payment_method.is_a?(Spree::Gateway::Payone::CreditCard)
+      end
+
+      def probably_redundant_attribute_setter
+        attrs = @payment.attributes
+        @payment.reload
+        attrs.each do |key, value|
+          @payment.update_attribute key, value
+        end
       end
     end
   end
